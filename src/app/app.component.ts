@@ -1,26 +1,21 @@
-import { Component, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, signal, inject } from '@angular/core';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   template: ` <router-outlet />
     <div class="app-container">
       <h1>{{ title() }}</h1>
-      <li><a (click)="title.set('Default is SSR')" routerLink="/">Home</a></li>
+      <li><a routerLink="/">Home</a></li>
       <li>
-        <a (click)="title.set('Client Side Rendering')" routerLink="/csr"
-          >CSR</a
-        >
+        <a routerLink="/csr">CSR</a>
       </li>
       <li>
-        <a (click)="title.set('Server Side Rendering')" routerLink="/ssr"
-          >SSR</a
-        >
+        <a routerLink="/ssr">SSR</a>
       </li>
       <li>
-        <a (click)="title.set('Static Site Generation')" routerLink="/ssg"
-          >SSG</a
-        >
+        <a routerLink="/ssg">SSG</a>
       </li>
     </div>`,
   styles: [
@@ -37,5 +32,26 @@ import { RouterModule } from '@angular/router';
   imports: [RouterModule],
 })
 export class AppComponent {
-  title = signal('Default SSR');
+  title = signal('Default - Client Side Rendering');
+  private router = inject(Router);
+
+  constructor() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event): void => {
+      this.updateTitle(event.url);
+    });
+  }
+
+  private updateTitle(url: string): void {
+    if (url.includes('/csr')) {
+      this.title.set('Client Side Rendering');
+    } else if (url.includes('/ssg')) {
+      this.title.set('Static Site Generation');
+    } else if (url.includes('/ssr')) {
+      this.title.set('Server Side Rendering');
+    } else {
+      this.title.set('Default - Client Side Rendering');
+    }
+  }
 }
